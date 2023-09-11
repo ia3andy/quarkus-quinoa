@@ -73,6 +73,9 @@ public class ForwardedDevProcessor {
         liveReload.setContextObject(QuinoaConfig.class, quinoaConfig);
         final String devServerHost = quinoaConfig.devServer.host;
         final String devServerCommand = quinoaDirectoryBuildItem.getDevServerCommand();
+        final PackageManager packageManager = quinoaDir.get().getPackageManager();
+        final int devServerPort = quinoaDirectoryBuildItem.getDevServerPort().getAsInt();
+        final String checkPath = quinoaConfig.devServer.checkPath.orElse(null);
         if (devService != null) {
             boolean shouldShutdownTheBroker = !quinoaConfig.equals(oldConfig);
             if (!shouldShutdownTheBroker) {
@@ -82,7 +85,8 @@ public class ForwardedDevProcessor {
                 }
                 LOG.debug("Quinoa config did not change; no need to restart.");
                 devServices.produce(devService.toBuildItem());
-                return new ForwardedDevServerBuildItem(devServerHost, quinoaDirectoryBuildItem.getDevServerPort().getAsInt());
+                final String hostAddress = PackageManager.isDevServerUp(devServerHost, devServerPort, checkPath);
+                return new ForwardedDevServerBuildItem(hostAddress, devServerPort);
             }
             shutdownDevService();
         }
@@ -101,9 +105,6 @@ public class ForwardedDevProcessor {
             return null;
         }
 
-        PackageManager packageManager = quinoaDir.get().getPackageManager();
-        final int devServerPort = quinoaDirectoryBuildItem.getDevServerPort().getAsInt();
-        final String checkPath = quinoaConfig.devServer.checkPath.orElse(null);
         if (!quinoaConfig.devServer.managed) {
             final String hostAddress = PackageManager.isDevServerUp(devServerHost, devServerPort, checkPath);
             if (hostAddress != null) {
